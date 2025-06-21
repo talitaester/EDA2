@@ -2,6 +2,7 @@ import heapq
 import os
 import sys
 import tempfile
+from heap import MinHeap;
 
 def ler_registro(arquivo):
     linha = arquivo.readline()
@@ -14,7 +15,9 @@ def ler_registro(arquivo):
 
 def selecao_por_substituicao(p, arquivo_entrada):
     runs = [] #nomes dos arquivos temporarios criados durante a ordenação
-    heap = [] #valores para serem inseridos na heap 
+    heap = []
+
+    # heap = MinHeap() #valores para serem inseridos na heap 
 
 
     #vai guardar os valores menores do que aqueles ja escritos na run atual    
