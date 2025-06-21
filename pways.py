@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 from heap import MinHeap;
+import shutil
 
 def ler_registro(arquivo):
     linha = arquivo.readline()
@@ -114,7 +115,8 @@ def pway_merge(runs, p, arquivo_saida):
     
     # Move o arquivo final para o destino
     if runs:
-        os.replace(runs[0], arquivo_saida)
+        shutil.copyfile(runs[0], arquivo_saida)
+        os.remove(runs[0]) 
     
     return passagens
 
@@ -126,6 +128,7 @@ def main():
     p = int(sys.argv[1])
     arquivo_entrada = sys.argv[2]
     arquivo_saida = sys.argv[3]
+
 
     runs = selecao_por_substituicao(p, arquivo_entrada)
     num_passagens = pway_merge(runs, 2*p, arquivo_saida)
