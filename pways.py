@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 import shutil
-from heap import MinHeapSelecao  # <- sua heap personalizada
+from heap import MinHeapSelecao
 
 def ler_registro(arquivo):
     linha = arquivo.readline()
@@ -18,15 +18,13 @@ def selecao_por_substituicao(p, arquivo_entrada):
     heap = MinHeapSelecao()
 
     with open(arquivo_entrada, 'r') as entrada:
-        # Inicializa heap com os primeiros p elementos válidos
         while len(heap) < p:
             num = ler_registro(entrada)
             if num is not None:
                 heap.push(num)
             else:
                 break
-        
-        # Enquanto houver elementos na heap
+
         while len(heap) > 0:
             with tempfile.NamedTemporaryFile(mode='w', delete=False) as run_file:
                 runs.append(run_file.name)
@@ -44,11 +42,11 @@ def selecao_por_substituicao(p, arquivo_entrada):
                         else:
                             heap.push(novo, marcado=True)
 
-                # Se restaram itens marcados, remove marcação e prepara para próxima run
+                # Desmarcar registros restantes para próxima run
                 remanescentes = []
                 while len(heap) > 0:
                     reg = heap.pop()
-                    remanescentes.append((reg.valor, False))  # desmarcar
+                    remanescentes.append((reg.valor, False))
 
                 for valor, marcado in remanescentes:
                     heap.push(valor, marcado)
@@ -57,8 +55,6 @@ def selecao_por_substituicao(p, arquivo_entrada):
 
 
 def pway_merge(runs, p, arquivo_saida):
-    import heapq  # OK usar heapq aqui, não há marcação
-
     passagens = 0
 
     while len(runs) > 1:
@@ -71,19 +67,19 @@ def pway_merge(runs, p, arquivo_saida):
 
             with tempfile.NamedTemporaryFile(mode='w', delete=False) as run_saida:
                 arquivos = [open(run, 'r') for run in grupo]
-                heap = []
+                heap = MinHeapSelecao()
 
                 for idx, arq in enumerate(arquivos):
                     num = ler_registro(arq)
                     if num is not None:
-                        heapq.heappush(heap, (num, idx))
+                        heap.push(num, origem=idx)
 
-                while heap:
-                    menor, idx = heapq.heappop(heap)
-                    run_saida.write(f"{menor}\n")
-                    num = ler_registro(arquivos[idx])
-                    if num is not None:
-                        heapq.heappush(heap, (num, idx))
+                while len(heap) > 0:
+                    reg = heap.pop()
+                    run_saida.write(f"{reg.valor}\n")
+                    novo = ler_registro(arquivos[reg.origem])
+                    if novo is not None:
+                        heap.push(novo, origem=reg.origem)
 
                 for arq in arquivos:
                     arq.close()
