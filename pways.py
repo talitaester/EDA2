@@ -1,9 +1,8 @@
-import heapq
 import os
 import sys
 import tempfile
-from heap import MinHeap;
 import shutil
+from heap import MinHeapSelecao  # <- sua heap personalizada
 
 def ler_registro(arquivo):
     linha = arquivo.readline()
@@ -15,109 +14,94 @@ def ler_registro(arquivo):
         return None
 
 def selecao_por_substituicao(p, arquivo_entrada):
-    runs = [] #nomes dos arquivos temporarios criados durante a ordenação
-    heap = []
+    runs = []
+    heap = MinHeapSelecao()
 
-    # heap = MinHeap() #valores para serem inseridos na heap 
-
-
-    #vai guardar os valores menores do que aqueles ja escritos na run atual    
-    #normalmente esses valores seriam inseridos na heap como marcados****
-    buffer = []
-    
     with open(arquivo_entrada, 'r') as entrada:
         # Inicializa heap com os primeiros p elementos válidos
         while len(heap) < p:
             num = ler_registro(entrada)
             if num is not None:
-                heapq.heappush(heap, num)
+                heap.push(num)
             else:
                 break
         
-        while heap:
-            # Cria novo arquivo temporário para a run atual
+        # Enquanto houver elementos na heap
+        while len(heap) > 0:
             with tempfile.NamedTemporaryFile(mode='w', delete=False) as run_file:
                 runs.append(run_file.name)
-                ultimo = None
-                
-                while heap:
-                    menor = heapq.heappop(heap)
-                    run_file.write(f"{menor}\n")
-                    ultimo = menor
-                    
-                    # Lê próximo registro
-                    num = ler_registro(entrada)
-                    if num is not None:
-                        if num >= ultimo:
-                            heapq.heappush(heap, num)
+                ultimo = -float('inf')
+
+                while not heap.todos_marcados():
+                    reg = heap.pop()
+                    run_file.write(f"{reg.valor}\n")
+                    ultimo = reg.valor
+
+                    novo = ler_registro(entrada)
+                    if novo is not None:
+                        if novo >= ultimo:
+                            heap.push(novo)
                         else:
-                            buffer.append(num) #guarda os valores marcados para colocar no proximo arquivo temporario
-                    else:
-                        continue
-                
-                # Prepara próxima run com o buffer
-                if buffer:
-                    heap = buffer
-                    heapq.heapify(heap)
-                    buffer = []
-    
+                            heap.push(novo, marcado=True)
+
+                # Se restaram itens marcados, remove marcação e prepara para próxima run
+                remanescentes = []
+                while len(heap) > 0:
+                    reg = heap.pop()
+                    remanescentes.append((reg.valor, False))  # desmarcar
+
+                for valor, marcado in remanescentes:
+                    heap.push(valor, marcado)
+
     return runs
 
 
 def pway_merge(runs, p, arquivo_saida):
-    temp_outputs = []
-    passagens = 0 
-    
+    import heapq  # OK usar heapq aqui, não há marcação
+
+    passagens = 0
+
     while len(runs) > 1:
-        novas_runs = [] 
-        
-        for i in range(0, len(runs), p): #separa grupos de p runs 
+        novas_runs = []
+
+        for i in range(0, len(runs), p):
             grupo = runs[i:i+p]
-            # Verifica se os arquivos existem
             if not all(os.path.exists(run) for run in grupo):
                 raise FileNotFoundError("Arquivo de run não encontrado")
-            
+
             with tempfile.NamedTemporaryFile(mode='w', delete=False) as run_saida:
-                # Abre todos os arquivos do grupo
                 arquivos = [open(run, 'r') for run in grupo]
                 heap = []
-                
-                # Inicializa heap
+
                 for idx, arq in enumerate(arquivos):
                     num = ler_registro(arq)
                     if num is not None:
                         heapq.heappush(heap, (num, idx))
-                
-                # Processa o merge
+
                 while heap:
                     menor, idx = heapq.heappop(heap)
                     run_saida.write(f"{menor}\n")
-                    
-                    # Lê próximo do mesmo arquivo
                     num = ler_registro(arquivos[idx])
                     if num is not None:
                         heapq.heappush(heap, (num, idx))
-                
-                # Fecha arquivos e armazena nova run
+
                 for arq in arquivos:
                     arq.close()
                 novas_runs.append(run_saida.name)
-        
-        # Remove arquivos antigos
+
         for run in runs:
             try:
                 os.remove(run)
             except:
                 pass
-        
+
         runs = novas_runs
         passagens += 1
-    
-    # Move o arquivo final para o destino
+
     if runs:
         shutil.copyfile(runs[0], arquivo_saida)
-        os.remove(runs[0]) 
-    
+        os.remove(runs[0])
+
     return passagens
 
 
@@ -129,11 +113,10 @@ def main():
     arquivo_entrada = sys.argv[2]
     arquivo_saida = sys.argv[3]
 
-
     runs = selecao_por_substituicao(p, arquivo_entrada)
-    num_passagens = pway_merge(runs, 2*p, arquivo_saida)
+    num_passagens = pway_merge(runs, p, arquivo_saida)
 
-    total_registros = sum(1 for _ in open(arquivo_entrada))
+    total_registros = sum(1 for linha in open(arquivo_entrada) if linha.strip().isdigit())
     print(f"#Regs Ways #Runs #Parses")
     print(f"{total_registros} {p} {len(runs)} {num_passagens}")
 
