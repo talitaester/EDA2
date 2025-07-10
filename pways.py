@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 import shutil
-from heap import MinHeapSelecao
+from heap import MinHeapSelecao  
 
 def ler_registro(arquivo):
     linha = arquivo.readline()
@@ -18,13 +18,15 @@ def selecao_por_substituicao(p, arquivo_entrada):
     heap = MinHeapSelecao()
 
     with open(arquivo_entrada, 'r') as entrada:
+        # Inicializa heap com os primeiros p elementos válidos
         while len(heap) < p:
             num = ler_registro(entrada)
             if num is not None:
                 heap.push(num)
             else:
                 break
-
+        
+        # Enquanto houver elementos na heap
         while len(heap) > 0:
             with tempfile.NamedTemporaryFile(mode='w', delete=False) as run_file:
                 runs.append(run_file.name)
@@ -42,11 +44,11 @@ def selecao_por_substituicao(p, arquivo_entrada):
                         else:
                             heap.push(novo, marcado=True)
 
-                # Desmarcar registros restantes para próxima run
+                # Se restaram itens marcados, remove marcação e prepara para próxima run
                 remanescentes = []
                 while len(heap) > 0:
                     reg = heap.pop()
-                    remanescentes.append((reg.valor, False))
+                    remanescentes.append((reg.valor, False))  # desmarcar
 
                 for valor, marcado in remanescentes:
                     heap.push(valor, marcado)
@@ -69,10 +71,11 @@ def pway_merge(runs, p, arquivo_saida):
                 arquivos = [open(run, 'r') for run in grupo]
                 heap = MinHeapSelecao()
 
+                # Inicializa heap com primeiro valor de cada run
                 for idx, arq in enumerate(arquivos):
                     num = ler_registro(arq)
                     if num is not None:
-                        heap.push(num, origem=idx)
+                        heap.push(num, origem=idx)  # origem = índice do arquivo
 
                 while len(heap) > 0:
                     reg = heap.pop()

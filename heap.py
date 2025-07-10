@@ -1,26 +1,27 @@
 import heapq
 
 class Registro:
-    def __init__(self, valor, marcado=False):
+    def __init__(self, valor, marcado=False, origem=None):
         self.valor = valor
         self.marcado = marcado
+        self.origem = origem  
 
     def __lt__(self, outro):
-        # Elementos não marcados têm prioridade
-        if self.marcado == outro.marcado:
-            return self.valor < outro.valor
-        return not self.marcado and outro.marcado
+        if self.marcado != outro.marcado:
+            return not self.marcado and outro.marcado
+        return self.valor < outro.valor
 
     def __repr__(self):
-        return f"{'*' if self.marcado else ''}{self.valor}"
-
+        marca = "*" if self.marcado else ""
+        origem = f"({self.origem})" if self.origem is not None else ""
+        return f"{marca}{self.valor}{origem}"
 
 class MinHeapSelecao:
     def __init__(self):
         self.heap = []
 
-    def push(self, valor, marcado=False):
-        heapq.heappush(self.heap, Registro(valor, marcado))
+    def push(self, valor, marcado=False, origem=None):
+        heapq.heappush(self.heap, Registro(valor, marcado, origem))
 
     def pop(self):
         if self.heap:
